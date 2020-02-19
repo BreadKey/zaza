@@ -1,8 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:zaza/extensions.dart';
 import 'package:zaza/constants.dart';
+import 'package:zaza/models/sleep_record.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -30,34 +32,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final themData = Theme.of(context);
-    final saturdayTextStyle = TextStyle(
-        fontWeight: FontWeight.w600, color: themData.primaryColorDark);
-    final sundayTextStyle =
-        TextStyle(fontWeight: FontWeight.w600, color: themData.accentColor);
-
-    Widget _getDayText(int day, int weekDay, bool isToday) {
-      if (isToday)
-        return Text(
-          "$day",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        );
-
-      switch (weekDay) {
-        case 7:
-          return Text(
-            "$day",
-            style: sundayTextStyle,
-          );
-        case 6:
-          return Text(
-            "$day",
-            style: saturdayTextStyle,
-          );
-        default:
-          return Text("$day");
-      }
-    }
+    final themeData = Theme.of(context);
 
     return Scaffold(
         appBar: AppBar(
@@ -72,7 +47,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             Container(
               padding: EdgeInsets.symmetric(vertical: 8),
-              color: themData.primaryColorLight,
+              color: themeData.primaryColorLight,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: <Widget>[
@@ -81,8 +56,8 @@ class _HomePageState extends State<HomePage> {
                   Text(Strings.wednesday),
                   Text(Strings.thursday),
                   Text(Strings.friday),
-                  Text(Strings.saturday, style: saturdayTextStyle),
-                  Text(Strings.sunday, style: sundayTextStyle),
+                  Text(Strings.saturday, style: themeData.saturdayTextStyle),
+                  Text(Strings.sunday, style: themeData.sundayTextStyle),
                 ],
               ),
             ),
@@ -90,47 +65,15 @@ class _HomePageState extends State<HomePage> {
               child: CustomScrollView(
                 slivers: <Widget>[
                   SliverAppBar(
-                    backgroundColor: themData.scaffoldBackgroundColor,
+                    backgroundColor: themeData.scaffoldBackgroundColor,
                     expandedHeight:
                         MediaQuery.of(context).size.width * 6 / 7 / 0.9,
                     flexibleSpace: FlexibleSpaceBar(
                       background: PageView.builder(
-                        itemBuilder: (context, index) {
-                          final dateFromIndex =
-                              YearMonthIndexConverter.fromYearMonthIndex(index);
-
-                          final weekDay = dateFromIndex.weekday - 2;
-                          final endDay = DateTime(dateFromIndex.year,
-                                  dateFromIndex.month + 1, 0)
-                              .day;
-
-                          return GridView.count(
-                            crossAxisCount: 7,
-                            childAspectRatio: 0.9,
-                            children: List.generate(42, (index) {
-                              final day = index - weekDay;
-                              final isToday = _isToday(DateTime(
-                                  dateFromIndex.year,
-                                  dateFromIndex.month,
-                                  day));
-
-                              return Container(
-                                margin: EdgeInsets.all(4),
-                                child: FlatButton(
-                                  shape: CircleBorder(),
-                                  color: isToday
-                                      ? themData.accentColor
-                                      : Colors.transparent,
-                                  onPressed:
-                                      day > 0 && day < endDay ? () {} : null,
-                                  child: day > 0 && day < endDay
-                                      ? _getDayText(day, index % 7 + 1, isToday)
-                                      : null,
-                                ),
-                              );
-                            }),
-                          );
-                        },
+                        itemBuilder: (context, index) => _Calendar(
+                          index,
+                          key: Key("calendar$index"),
+                        ),
                         controller: _pageController,
                       ),
                     ),
@@ -139,7 +82,7 @@ class _HomePageState extends State<HomePage> {
                     crossAxisCount: 1,
                     children: <Widget>[
                       Container(
-                        color: themData.primaryColorDark,
+                        color: themeData.primaryColorDark,
                       )
                     ],
                   )
@@ -149,11 +92,6 @@ class _HomePageState extends State<HomePage> {
           ],
         ));
   }
-
-  bool _isToday(DateTime date) =>
-      _today.year == date.year &&
-      _today.month == date.month &&
-      _today.day == date.day;
 }
 
 class _CalendarHeader extends StatefulWidget {
@@ -227,4 +165,155 @@ class _CalendarHeaderState extends State<_CalendarHeader> {
       ],
     );
   }
+}
+
+class _Calendar extends StatefulWidget {
+  final int monthIndex;
+
+  const _Calendar(this.monthIndex, {key: Key}) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => _CalendarState(monthIndex);
+}
+
+class _CalendarState extends State<_Calendar>
+    with AutomaticKeepAliveClientMixin {
+  final int _monthIndex;
+  List<SleepRecord> _sleepRecords = [];
+  DateTime _today = DateTime.now();
+  ThemeData _themeData;
+  RefreshController _refreshController;
+
+  _CalendarState(this._monthIndex);
+
+  final sleepRecordRepository = SleepRecordRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    _refreshController = RefreshController(initialRefresh: true);
+  }
+
+  @override
+  void dispose() {
+    _refreshController.dispose();
+    super.dispose();
+  }
+
+  void refresh() {
+    sleepRecordRepository.findByMonthIndex(_monthIndex).then((sleepRecords) {
+      setState(() {
+        _sleepRecords = sleepRecords;
+        _today = DateTime.now();
+        _refreshController.refreshCompleted();
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _themeData = Theme.of(context);
+
+    final dateFromIndex =
+        YearMonthIndexConverter.fromYearMonthIndex(_monthIndex);
+
+    final weekDay = dateFromIndex.weekday - 2;
+    final endDay = DateTime(dateFromIndex.year, dateFromIndex.month + 1, 0).day;
+
+    return SmartRefresher(
+      header: WaterDropMaterialHeader(
+        backgroundColor: _themeData.primaryColorLight,
+        color: _themeData.accentColor,
+      ),
+      controller: _refreshController,
+      onRefresh: refresh,
+      child: GridView.count(
+        crossAxisCount: 7,
+        childAspectRatio: 0.9,
+        children: List.generate(42, (index) {
+          final day = index - weekDay;
+          final isToday =
+              _isToday(DateTime(dateFromIndex.year, dateFromIndex.month, day));
+
+          final sleepRecord = _sleepRecords
+              .firstWhere((record) => record.day == day, orElse: () => null);
+
+          return Container(
+              margin: EdgeInsets.all(1),
+              child: Material(
+                shape: CircleBorder(),
+                  color: _getDayColor(sleepRecord),
+                  child: Container(
+                    margin: EdgeInsets.all(3),
+                    child: FlatButton(
+                      color: isToday ? _themeData.accentColor : Colors.transparent,
+                      shape: CircleBorder(),
+                      onPressed: day > 0 && day < endDay
+                          ? () {
+                              final sleepRecord = SleepRecord(_monthIndex, day,
+                                  sleepHours: 7, conditionScore: 5);
+
+                              SleepRecordRepository()
+                                  .update(sleepRecord)
+                                  .then((_) {
+                                setState(() {
+                                  _sleepRecords.add(sleepRecord);
+                                });
+                              });
+                            }
+                          : null,
+                      child: day > 0 && day < endDay
+                          ? _getDayText(day, index % 7 + 1, isToday)
+                          : null,
+                    ),
+                  )));
+        }),
+      ),
+    );
+  }
+
+  Color _getDayColor(SleepRecord sleepRecord) {
+    return sleepRecord == null
+        ? Colors.transparent
+        : sleepRecord.conditionScore > 90
+            ? Colors.greenAccent
+            : sleepRecord.conditionScore > 70
+                ? Colors.green
+                : sleepRecord.conditionScore > 50
+                    ? Colors.yellow
+                    : sleepRecord.conditionScore > 25
+                        ? Colors.orange
+                        : Colors.redAccent;
+  }
+
+  Widget _getDayText(int day, int weekDay, bool isToday) {
+    if (isToday)
+      return Text(
+        "$day",
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+      );
+
+    switch (weekDay) {
+      case 7:
+        return Text(
+          "$day",
+          style: _themeData.sundayTextStyle,
+        );
+      case 6:
+        return Text(
+          "$day",
+          style: _themeData.saturdayTextStyle,
+        );
+      default:
+        return Text("$day");
+    }
+  }
+
+  bool _isToday(DateTime date) =>
+      _today.year == date.year &&
+      _today.month == date.month &&
+      _today.day == date.day;
+
+  @override
+  bool get wantKeepAlive => true;
 }
