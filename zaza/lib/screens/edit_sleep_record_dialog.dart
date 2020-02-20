@@ -16,7 +16,7 @@ class _EditSleepRecordDialog extends StatefulWidget {
 }
 
 class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
-  static final _nanRegExp = RegExp("^[0-9]");
+  static final _nanRegExp = RegExp(r"['.'',' ]");
   final _formKey = GlobalKey<FormState>();
 
   final SleepRecord sleepRecord;
