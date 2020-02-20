@@ -24,6 +24,8 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
   AnimationController _rotateAnimController;
   Animation<double> _rotateAnimation;
 
+  bool _isRight = true;
+
   @override
   void initState() {
     super.initState();
@@ -47,12 +49,12 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
         _sleepRecords.add(editedSleepRecord);
         _calculateConditionScoreByHours();
       });
+    });
 
-      _sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
-        setState(() {
-          _sleepRecords.remove(removedSleepRecord);
-          _calculateConditionScoreByHours();
-        });
+    _sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
+      setState(() {
+        _sleepRecords.remove(removedSleepRecord);
+        _calculateConditionScoreByHours();
       });
     });
   }
@@ -101,6 +103,7 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
   @override
   Widget build(BuildContext context) {
     final themeData = Theme.of(context);
+    final moveable =_sleepRecords.length > 1;
 
     return Stack(
       children: <Widget>[
@@ -109,8 +112,14 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
             animation: _rotateAnimation,
             builder: (context, child) {
               return CustomPaint(
-                painter: _SleepRecordPieChart(_conditionScoresByHours, _angles,
-                    _firstScoreIndex, _rotateAnimController.isAnimating ? _rotateAnimation.value : 1.0),
+                painter: _SleepRecordPieChart(
+                    _conditionScoresByHours,
+                    _angles,
+                    _firstScoreIndex,
+                    _rotateAnimController.isAnimating
+                        ? _rotateAnimation.value
+                        : 1.0,
+                    _isRight),
               );
             },
           ),
@@ -119,29 +128,31 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             IconButton(
+              color: themeData.accentColor,
               icon: Icon(
                 Icons.chevron_left,
-                color: themeData.accentColor,
               ),
-              onPressed: _sleepRecords.isEmpty
+              onPressed: !moveable
                   ? null
                   : () {
                       _rotateAnimController.forward(from: 0.0);
                       setState(() {
+                        _isRight = false;
                         _firstScoreIndex--;
                       });
                     },
             ),
             IconButton(
+              color: themeData.accentColor,
               icon: Icon(
                 Icons.chevron_right,
-                color: themeData.accentColor,
               ),
-              onPressed: _sleepRecords.isEmpty
+              onPressed: !moveable
                   ? null
                   : () {
                       _rotateAnimController.forward(from: 0.0);
                       setState(() {
+                        _isRight = true;
                         _firstScoreIndex++;
                       });
                     },
@@ -162,10 +173,12 @@ class _SleepRecordPieChart extends CustomPainter {
 
   final List<double> angles;
 
-  final double _animationRatio;
+  final double _animationValue;
+
+  final bool isRight;
 
   _SleepRecordPieChart(this.conditionScoreAverages, this.angles,
-      this.firstScoreIndex, this._animationRatio) {
+      this.firstScoreIndex, this._animationValue, this.isRight) {
     if (angles.isEmpty) return;
 
     firstScoreIndex = firstScoreIndex % angles.length;
@@ -191,9 +204,17 @@ class _SleepRecordPieChart extends CustomPainter {
         : angles
             .sublist(0, firstScoreIndex)
             .reduce((acc, angle) => acc + angle);
-    double endAngle =
-        - pi / 2 - sumOfBeforeAngles - (angles[firstScoreIndex] / 2) *
-            _animationRatio;
+    double endAngle;
+
+    endAngle = -pi / 2 - sumOfBeforeAngles;
+
+    if (isRight) {
+      endAngle -= (angles[firstScoreIndex] / 2) * _animationValue;
+    } else {
+      final firstAngle = angles[firstScoreIndex];
+      endAngle -= firstAngle;
+      endAngle += firstAngle / 2 * _animationValue;
+    }
 
     bool textAtSmallPositionToggle = false;
 

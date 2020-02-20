@@ -341,6 +341,9 @@ class _CalendarState extends State<_Calendar>
       _today.day == date.day;
 
   void _onSleepRecordEdited(SleepRecord sleepRecord) {
+    if (sleepRecord.monthIndex != _monthIndex)
+      return;
+
     setState(() {
       _sleepRecords.removeWhere((record) =>
           record.monthIndex == sleepRecord.monthIndex &&

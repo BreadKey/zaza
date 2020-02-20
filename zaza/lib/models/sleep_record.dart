@@ -15,17 +15,26 @@ class SleepRecord {
           sleepHours: json["sleep_hours"],
           conditionScore: json["condition_score"]);
 
-  Map<String, dynamic> toJson() => {
+  Map<String, dynamic> toJson() =>
+      {
         "month_index": monthIndex,
         "day": day,
         "sleep_hours": sleepHours,
         "condition_score": conditionScore
       };
+
+  @override
+  int get hashCode => monthIndex ^ day;
+
+  @override
+  bool operator ==(other) {
+    return other.hashCode == hashCode;
+  }
 }
 
 abstract class SleepRecordRepository {
   static final SleepRecordRepository _singleton =
-      SleepRecordRepository._local();
+  SleepRecordRepository._local();
 
   factory SleepRecordRepository() => _singleton;
 
@@ -47,7 +56,8 @@ class _LocalSleepRepository implements SleepRecordRepository {
     database = _initDatabase();
   }
 
-  Future<Database> _initDatabase() async => openDatabase(
+  Future<Database> _initDatabase() async =>
+      openDatabase(
         join(await getDatabasesPath(), "sleep_record_database.db"),
         onCreate: (db, version) {
           return db.execute(
@@ -60,8 +70,9 @@ class _LocalSleepRepository implements SleepRecordRepository {
   Future<List<SleepRecord>> getAll() async {
     final db = await database;
 
-    return db.query("sleep_records").then((maps) => List.generate(
-        maps.length, (index) => SleepRecord.fromJson(maps[index])));
+    return db.query("sleep_records").then((maps) =>
+        List.generate(
+            maps.length, (index) => SleepRecord.fromJson(maps[index])));
   }
 
   @override
@@ -70,8 +81,9 @@ class _LocalSleepRepository implements SleepRecordRepository {
 
     return db.query("sleep_records", where: "month_index = ?", whereArgs: [
       monthIndex
-    ]).then((maps) => List.generate(
-        maps.length, (index) => SleepRecord.fromJson(maps[index])));
+    ]).then((maps) =>
+        List.generate(
+            maps.length, (index) => SleepRecord.fromJson(maps[index])));
   }
 
   @override
