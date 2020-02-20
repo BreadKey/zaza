@@ -18,14 +18,14 @@ Color getDayColor(num conditionScore) {
   return conditionScore == null
       ? Colors.transparent
       : conditionScore > 90
-      ? Colors.green
-      : conditionScore > 70
-      ? Colors.lime
-      : conditionScore > 50
-      ? Colors.yellow
-      : conditionScore > 25
-      ? Colors.orangeAccent
-      : Colors.redAccent;
+          ? Colors.green
+          : conditionScore > 70
+              ? Colors.lime
+              : conditionScore > 50
+                  ? Colors.yellow
+                  : conditionScore > 25
+                      ? Colors.orangeAccent
+                      : Colors.redAccent;
 }
 
 class HomePage extends StatefulWidget {
@@ -221,11 +221,13 @@ class _CalendarState extends State<_Calendar>
   void initState() {
     super.initState();
     _refreshController = RefreshController(initialRefresh: true);
-    _editedSleepRecordListener =_sleepRecordBloc.editedSleepRecord.listen((editedSleepRecord) {
+    _editedSleepRecordListener =
+        _sleepRecordBloc.editedSleepRecord.listen((editedSleepRecord) {
       _onSleepRecordEdited(editedSleepRecord);
     });
 
-    _removedSleepRecordListener = _sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
+    _removedSleepRecordListener =
+        _sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
       _onSleepRecordRemoved(removedSleepRecord);
     });
   }
@@ -279,30 +281,62 @@ class _CalendarState extends State<_Calendar>
 
           final textColor = _getDayTextColor(day, index % 7 + 1, isToday);
 
+          final hourText =
+              sleepRecord == null ? "" : "${sleepRecord.sleepHours}h";
+
           return Container(
               margin: EdgeInsets.all(1),
               child: Material(
                   shape: CircleBorder(),
                   color: getDayColor(sleepRecord?.conditionScore),
                   child: Container(
-                    margin: EdgeInsets.all(3),
-                    child: FlatButton(
-                      color:
-                          isToday ? _themeData.accentColor : Colors.transparent,
-                      shape: CircleBorder(),
-                      textColor: textColor,
-                      disabledTextColor: textColor.withOpacity(0.5),
-                      onPressed: day > 0 && day < endDay
-                          ? _today.isBefore(currentDay)
-                              ? null
-                              : () {
-                                  _showEditSleepRecordDialog(
-                                      context, sleepRecord, day);
-                                }
-                          : null,
-                      child: day > 0 && day < endDay ? Text("$day") : null,
-                    ),
-                  )));
+                      margin: EdgeInsets.all(3),
+                      child: Stack(
+                        children: <Widget>[
+                          SizedBox.expand(
+                            child: FlatButton(
+                              color: isToday
+                                  ? _themeData.accentColor
+                                  : Colors.transparent,
+                              shape: CircleBorder(),
+                              textColor: textColor,
+                              disabledTextColor: textColor.withOpacity(0.5),
+                              onPressed: day > 0 && day < endDay
+                                  ? _today.isBefore(currentDay)
+                                      ? null
+                                      : () {
+                                          _showEditSleepRecordDialog(
+                                              context, sleepRecord, day);
+                                        }
+                                  : null,
+                              child:
+                                  day > 0 && day < endDay ? Text("$day") : null,
+                            ),
+                          ),
+                          Positioned.fill(
+                              left: 2,
+                              top: 2,
+                              child: Stack(
+                                children: <Widget>[
+                                  Text(
+                                    hourText,
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      foreground: Paint()
+                                        ..color = _themeData.primaryColorDark
+                                        ..strokeWidth = 2
+                                        ..style = PaintingStyle.stroke,
+                                    ),
+                                  ),
+                                  Text(
+                                    hourText,
+                                    style: TextStyle(
+                                        fontSize: 10, color: Colors.white),
+                                  )
+                                ],
+                              ))
+                        ],
+                      ))));
         }),
       ),
     );
@@ -313,10 +347,7 @@ class _CalendarState extends State<_Calendar>
     showDialog(
         context: context,
         builder: (context) => _EditSleepRecordDialog(
-              _sleepRecordBloc,
-              sleepRecord,
-              _monthIndex,
-              day));
+            _sleepRecordBloc, sleepRecord, _monthIndex, day));
   }
 
   Color _getDayTextColor(int day, int weekDay, bool isToday) {
@@ -338,8 +369,7 @@ class _CalendarState extends State<_Calendar>
       _today.day == date.day;
 
   void _onSleepRecordEdited(SleepRecord sleepRecord) {
-    if (sleepRecord.monthIndex != _monthIndex)
-      return;
+    if (sleepRecord.monthIndex != _monthIndex) return;
 
     setState(() {
       _sleepRecords.removeWhere((record) =>
