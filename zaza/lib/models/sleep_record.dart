@@ -31,6 +31,8 @@ abstract class SleepRecordRepository {
 
   factory SleepRecordRepository._local() => _LocalSleepRepository();
 
+  Future<List<SleepRecord>> getAll();
+
   Future<List<SleepRecord>> findByMonthIndex(int monthIndex);
 
   Future<void> update(SleepRecord sleepRecord);
@@ -53,6 +55,14 @@ class _LocalSleepRepository implements SleepRecordRepository {
         },
         version: 1,
       );
+
+  @override
+  Future<List<SleepRecord>> getAll() async {
+    final db = await database;
+
+    return db.query("sleep_records").then((maps) => List.generate(
+        maps.length, (index) => SleepRecord.fromJson(maps[index])));
+  }
 
   @override
   Future<List<SleepRecord>> findByMonthIndex(int monthIndex) async {
@@ -86,6 +96,8 @@ class _LocalSleepRepository implements SleepRecordRepository {
   Future<void> remove(SleepRecord sleepRecord) async {
     final db = await database;
 
-    return db.delete("sleep_records", where: "month_index = ? AND day = ?", whereArgs: [sleepRecord.monthIndex, sleepRecord.day]);
+    return db.delete("sleep_records",
+        where: "month_index = ? AND day = ?",
+        whereArgs: [sleepRecord.monthIndex, sleepRecord.day]);
   }
 }

@@ -1,33 +1,28 @@
 part of 'home_page.dart';
 
 class _EditSleepRecordDialog extends StatefulWidget {
+  final SleepRecordBloc _sleepRecordBloc;
   final SleepRecord sleepRecord;
   final int monthIndex;
   final int day;
-  final Function(SleepRecord) _onEditCompleted;
-  final Function(SleepRecord) _onRemoved;
 
-  const _EditSleepRecordDialog(this.sleepRecord, this.monthIndex, this.day,
-      {Function(SleepRecord) onEditCompleted, Function(SleepRecord) onRemoved})
-      : this._onEditCompleted = onEditCompleted,
-        this._onRemoved = onRemoved;
+  const _EditSleepRecordDialog(this._sleepRecordBloc, this.sleepRecord, this.monthIndex, this.day);
+
 
   @override
   State<StatefulWidget> createState() =>
-      _EditSleepRecordState(sleepRecord, monthIndex, day, _onEditCompleted, _onRemoved);
+      _EditSleepRecordState(_sleepRecordBloc, sleepRecord, monthIndex, day);
 }
 
 class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
   static final _nanRegExp = RegExp(r"['.'',' ]");
+  final SleepRecordBloc _sleepRecordBloc;
+
   final _formKey = GlobalKey<FormState>();
 
   SleepRecord sleepRecord;
   final int monthIndex;
   final int day;
-  final Function(SleepRecord) onEditCompleted;
-  final Function(SleepRecord) onRemoved;
-
-  final SleepRecordRepository _sleepRecordRepository = SleepRecordRepository();
 
   bool _validated = false;
 
@@ -37,7 +32,7 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
   TextEditingController _conditionScoreTextController;
 
   _EditSleepRecordState(
-      this.sleepRecord, this.monthIndex, this.day, this.onEditCompleted, this.onRemoved);
+      this._sleepRecordBloc, this.sleepRecord, this.monthIndex, this.day);
 
   @override
   void initState() {
@@ -120,9 +115,7 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
               this.sleepRecord = null;
             });
 
-            _sleepRecordRepository.remove(sleepRecord).then((_) {
-              onRemoved(sleepRecord);
-            });
+            _sleepRecordBloc.remove(sleepRecord);
           },
         ),
 
@@ -140,8 +133,8 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
                         conditionScore:
                             int.parse(_conditionScoreTextController.text));
 
-                    _sleepRecordRepository.update(sleepRecord).then((_) {
-                      onEditCompleted(sleepRecord);
+                    _sleepRecordBloc.update(sleepRecord).then((_) {
+                      Navigator.of(context).pop();
                     });
                   }
                 }

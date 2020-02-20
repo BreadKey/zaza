@@ -1,12 +1,32 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:zaza/blocs/sleep_record_bloc.dart';
 import 'package:zaza/extensions.dart';
 import 'package:zaza/constants.dart';
 import 'package:zaza/models/sleep_record.dart';
 
 part 'edit_sleep_record_dialog.dart';
+
+part 'sleep_record_chart.dart';
+
+Color getDayColor(num conditionScore) {
+  return conditionScore == null
+      ? Colors.transparent
+      : conditionScore > 90
+      ? Colors.greenAccent
+      : conditionScore > 70
+      ? Colors.green
+      : conditionScore > 50
+      ? Colors.yellow
+      : conditionScore > 25
+      ? Colors.orange
+      : Colors.redAccent;
+}
 
 class HomePage extends StatefulWidget {
   @override
@@ -19,6 +39,8 @@ class _HomePageState extends State<HomePage> {
   final _today = DateTime.now();
   PageController _pageController;
 
+  final _sleepRecordBloc = SleepRecordBloc();
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +50,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    _sleepRecordBloc.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -73,6 +96,7 @@ class _HomePageState extends State<HomePage> {
                     flexibleSpace: FlexibleSpaceBar(
                       background: PageView.builder(
                         itemBuilder: (context, index) => _Calendar(
+                          _sleepRecordBloc,
                           index,
                           key: Key("calendar$index"),
                         ),
@@ -85,6 +109,7 @@ class _HomePageState extends State<HomePage> {
                     children: <Widget>[
                       Container(
                         color: themeData.primaryColorDark,
+                        child: _SleepRecordChart(_sleepRecordBloc),
                       )
                     ],
                   )
@@ -170,40 +195,54 @@ class _CalendarHeaderState extends State<_CalendarHeader> {
 }
 
 class _Calendar extends StatefulWidget {
+  final SleepRecordBloc _sleepRecordBloc;
   final int monthIndex;
 
-  const _Calendar(this.monthIndex, {key: Key}) : super(key: key);
+  const _Calendar(this._sleepRecordBloc, this.monthIndex, {key: Key})
+      : super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _CalendarState(monthIndex);
+  State<StatefulWidget> createState() =>
+      _CalendarState(_sleepRecordBloc, monthIndex);
 }
 
 class _CalendarState extends State<_Calendar>
     with AutomaticKeepAliveClientMixin {
+  final SleepRecordBloc _sleepRecordBloc;
   final int _monthIndex;
   List<SleepRecord> _sleepRecords = [];
   DateTime _today = DateTime.now();
   ThemeData _themeData;
   RefreshController _refreshController;
 
-  _CalendarState(this._monthIndex);
+  _CalendarState(this._sleepRecordBloc, this._monthIndex);
 
-  final sleepRecordRepository = SleepRecordRepository();
+  StreamSubscription _editedSleepRecordListener;
+  StreamSubscription _removedSleepRecordListener;
 
   @override
   void initState() {
     super.initState();
     _refreshController = RefreshController(initialRefresh: true);
+    _editedSleepRecordListener =_sleepRecordBloc.editedSleepRecord.listen((editedSleepRecord) {
+      _onSleepRecordEdited(editedSleepRecord);
+    });
+
+    _removedSleepRecordListener = _sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
+      _onSleepRecordRemoved(removedSleepRecord);
+    });
   }
 
   @override
   void dispose() {
+    _editedSleepRecordListener.cancel();
+    _removedSleepRecordListener.cancel();
     _refreshController.dispose();
     super.dispose();
   }
 
   void refresh() {
-    sleepRecordRepository.findByMonthIndex(_monthIndex).then((sleepRecords) {
+    _sleepRecordBloc.findByMonthIndex(_monthIndex).then((sleepRecords) {
       setState(() {
         _sleepRecords = sleepRecords;
         _today = DateTime.now();
@@ -247,7 +286,7 @@ class _CalendarState extends State<_Calendar>
               margin: EdgeInsets.all(1),
               child: Material(
                   shape: CircleBorder(),
-                  color: _getDayColor(sleepRecord),
+                  color: getDayColor(sleepRecord?.conditionScore),
                   child: Container(
                     margin: EdgeInsets.all(3),
                     child: FlatButton(
@@ -277,29 +316,10 @@ class _CalendarState extends State<_Calendar>
     showDialog(
         context: context,
         builder: (context) => _EditSleepRecordDialog(
+              _sleepRecordBloc,
               sleepRecord,
               _monthIndex,
-              day,
-              onEditCompleted: (sleepRecord) {
-                _onSleepRecordEdited(sleepRecord);
-                Navigator.of(context).pop();
-              },
-              onRemoved: _onSleepRecordRemoved,
-            ));
-  }
-
-  Color _getDayColor(SleepRecord sleepRecord) {
-    return sleepRecord == null
-        ? Colors.transparent
-        : sleepRecord.conditionScore > 90
-            ? Colors.greenAccent
-            : sleepRecord.conditionScore > 70
-                ? Colors.green
-                : sleepRecord.conditionScore > 50
-                    ? Colors.yellow
-                    : sleepRecord.conditionScore > 25
-                        ? Colors.orange
-                        : Colors.redAccent;
+              day));
   }
 
   Color _getDayTextColor(int day, int weekDay, bool isToday) {
