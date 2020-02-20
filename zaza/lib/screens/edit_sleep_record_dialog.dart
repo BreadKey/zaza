@@ -68,8 +68,7 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
                   icon: Icon(Icons.watch_later), labelText: Strings.sleepTime),
               keyboardType: TextInputType.number,
               validator: (value) {
-                if (_isNaN(value))
-                  return Strings.pleaseEnterOnlyNumber;
+                if (_isNaN(value)) return Strings.pleaseEnterOnlyNumber;
                 return null;
               },
               onFieldSubmitted: (value) {
@@ -109,18 +108,23 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
           icon: Icon(Icons.edit),
           onPressed: _validated
               ? () {
-            setState(() {
-              _validated = false;
-            });
-            onEditCompleted(SleepRecord(monthIndex, day,
-                sleepHours: int.parse(_sleepHoursTextController.text),
-                conditionScore: int.parse(_conditionScoreTextController.text)));
-          }
+                  setState(() {
+                    _validated = false;
+                  });
+
+                  if (_formKey.currentState.validate()) {
+                    onEditCompleted(SleepRecord(monthIndex, day,
+                        sleepHours: int.parse(_sleepHoursTextController.text),
+                        conditionScore:
+                            int.parse(_conditionScoreTextController.text)));
+                  }
+                }
               : null,
         )
       ],
     );
   }
 
-  bool _isNaN(String value) => _nanRegExp.hasMatch(value) || value.contains("-");
+  bool _isNaN(String value) =>
+      _nanRegExp.hasMatch(value) || value.contains("-");
 }
