@@ -234,11 +234,14 @@ class _CalendarState extends State<_Calendar>
         childAspectRatio: 0.9,
         children: List.generate(42, (index) {
           final day = index - weekDay;
-          final isToday =
-              _isToday(DateTime(dateFromIndex.year, dateFromIndex.month, day));
+          final currentDay =
+              DateTime(dateFromIndex.year, dateFromIndex.month, day);
+          final isToday = _isToday(currentDay);
 
           final sleepRecord = _sleepRecords
               .firstWhere((record) => record.day == day, orElse: () => null);
+
+          final textColor = _getDayTextColor(day, index % 7 + 1, isToday);
 
           return Container(
               margin: EdgeInsets.all(1),
@@ -251,14 +254,18 @@ class _CalendarState extends State<_Calendar>
                       color:
                           isToday ? _themeData.accentColor : Colors.transparent,
                       shape: CircleBorder(),
+                      textColor: textColor,
+                      disabledTextColor: textColor.withOpacity(0.5),
                       onPressed: day > 0 && day < endDay
-                          ? () {
-                              _showEditSleepRecordDialog(
-                                  context, sleepRecord, day);
-                            }
+                          ? _today.isBefore(currentDay)
+                              ? null
+                              : () {
+                                  _showEditSleepRecordDialog(
+                                      context, sleepRecord, day);
+                                }
                           : null,
                       child: day > 0 && day < endDay
-                          ? _getDayText(day, index % 7 + 1, isToday)
+                          ? Text("$day")
                           : null,
                     ),
                   )));
@@ -296,26 +303,17 @@ class _CalendarState extends State<_Calendar>
                         : Colors.redAccent;
   }
 
-  Widget _getDayText(int day, int weekDay, bool isToday) {
+  Color _getDayTextColor(int day, int weekDay, bool isToday) {
     if (isToday)
-      return Text(
-        "$day",
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-      );
+      return Colors.white;
 
     switch (weekDay) {
       case 7:
-        return Text(
-          "$day",
-          style: _themeData.sundayTextStyle,
-        );
+        return _themeData.accentColor;
       case 6:
-        return Text(
-          "$day",
-          style: _themeData.saturdayTextStyle,
-        );
+        return _themeData.primaryColorDark;
       default:
-        return Text("$day");
+        return _themeData.textTheme.body1.color;
     }
   }
 
