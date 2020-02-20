@@ -65,7 +65,18 @@ class _LocalSleepRepository implements SleepRecordRepository {
   @override
   Future<void> update(SleepRecord sleepRecord) async {
     final db = await database;
+    final exist = await db.query("sleep_records",
+        where: "month_index = ? AND day = ?",
+        whereArgs: [sleepRecord.monthIndex, sleepRecord.day]);
 
-    return db.insert("sleep_records", sleepRecord.toJson(), conflictAlgorithm: ConflictAlgorithm.replace);
+    if (exist.isEmpty) {
+      return db.insert("sleep_records", sleepRecord.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace);
+    } else {
+      return db.update("sleep_records", sleepRecord.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+          where: "month_index = ? AND day = ?",
+          whereArgs: [sleepRecord.monthIndex, sleepRecord.day]);
+    }
   }
 }
