@@ -45,11 +45,13 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
             sleepRecord.monthIndex == editedSleepRecord.monthIndex &&
             sleepRecord.day == editedSleepRecord.day);
         _sleepRecords.add(editedSleepRecord);
+        _calculateConditionScoreByHours();
       });
 
       _sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
         setState(() {
           _sleepRecords.remove(removedSleepRecord);
+          _calculateConditionScoreByHours();
         });
       });
     });
