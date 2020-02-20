@@ -5,24 +5,29 @@ class _EditSleepRecordDialog extends StatefulWidget {
   final int monthIndex;
   final int day;
   final Function(SleepRecord) _onEditCompleted;
+  final Function(SleepRecord) _onRemoved;
 
   const _EditSleepRecordDialog(this.sleepRecord, this.monthIndex, this.day,
-      {Function(SleepRecord) onEditCompleted})
-      : this._onEditCompleted = onEditCompleted;
+      {Function(SleepRecord) onEditCompleted, Function(SleepRecord) onRemoved})
+      : this._onEditCompleted = onEditCompleted,
+        this._onRemoved = onRemoved;
 
   @override
   State<StatefulWidget> createState() =>
-      _EditSleepRecordState(sleepRecord, monthIndex, day, _onEditCompleted);
+      _EditSleepRecordState(sleepRecord, monthIndex, day, _onEditCompleted, _onRemoved);
 }
 
 class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
   static final _nanRegExp = RegExp(r"['.'',' ]");
   final _formKey = GlobalKey<FormState>();
 
-  final SleepRecord sleepRecord;
+  SleepRecord sleepRecord;
   final int monthIndex;
   final int day;
   final Function(SleepRecord) onEditCompleted;
+  final Function(SleepRecord) onRemoved;
+
+  final SleepRecordRepository _sleepRecordRepository = SleepRecordRepository();
 
   bool _validated = false;
 
@@ -32,16 +37,16 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
   TextEditingController _conditionScoreTextController;
 
   _EditSleepRecordState(
-      this.sleepRecord, this.monthIndex, this.day, this.onEditCompleted);
+      this.sleepRecord, this.monthIndex, this.day, this.onEditCompleted, this.onRemoved);
 
   @override
   void initState() {
     super.initState();
     _conditionFocusNode = FocusNode();
     _sleepHoursTextController =
-        TextEditingController(text: "${sleepRecord?.sleepHours ?? ""}");
+        TextEditingController(text: sleepRecord?.sleepHours?.toString());
     _conditionScoreTextController =
-        TextEditingController(text: "${sleepRecord?.conditionScore ?? ""}");
+        TextEditingController(text: sleepRecord?.conditionScore?.toString());
   }
 
   @override
@@ -62,10 +67,11 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             TextFormField(
+              textAlign: TextAlign.right,
               controller: _sleepHoursTextController,
               autofocus: true,
               decoration: InputDecoration(
-                  icon: Icon(Icons.watch_later), labelText: Strings.sleepTime),
+                  icon: Icon(Icons.watch_later), labelText: Strings.sleepTime, suffixText: Strings.hourSuffix),
               keyboardType: TextInputType.number,
               validator: (value) {
                 if (_isNaN(value)) return Strings.pleaseEnterOnlyNumber;
@@ -76,10 +82,11 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
               },
             ),
             TextFormField(
+              textAlign: TextAlign.right,
               controller: _conditionScoreTextController,
               focusNode: _conditionFocusNode,
               decoration: InputDecoration(
-                  icon: Icon(Icons.mood), labelText: Strings.condition),
+                  icon: Icon(Icons.mood), labelText: Strings.condition, hintText: "0~100", suffixText: Strings.scoreSuffix),
               keyboardType: TextInputType.number,
               validator: (value) {
                 if (_isNaN(value))
@@ -105,6 +112,21 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
       ),
       actions: <Widget>[
         IconButton(
+          icon: Icon(Icons.delete_forever),
+          onPressed: sleepRecord == null ? null : () {
+            final sleepRecord = this.sleepRecord;
+
+            setState(() {
+              this.sleepRecord = null;
+            });
+
+            _sleepRecordRepository.remove(sleepRecord).then((_) {
+              onRemoved(sleepRecord);
+            });
+          },
+        ),
+
+        IconButton(
           icon: Icon(Icons.edit),
           onPressed: _validated
               ? () {
@@ -113,10 +135,14 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
                   });
 
                   if (_formKey.currentState.validate()) {
-                    onEditCompleted(SleepRecord(monthIndex, day,
+                    final sleepRecord = SleepRecord(monthIndex, day,
                         sleepHours: int.parse(_sleepHoursTextController.text),
                         conditionScore:
-                            int.parse(_conditionScoreTextController.text)));
+                            int.parse(_conditionScoreTextController.text));
+
+                    _sleepRecordRepository.update(sleepRecord).then((_) {
+                      onEditCompleted(sleepRecord);
+                    });
                   }
                 }
               : null,
@@ -126,5 +152,5 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
   }
 
   bool _isNaN(String value) =>
-      _nanRegExp.hasMatch(value) || value.contains("-");
+      _nanRegExp.hasMatch(value) || value.contains("-") || value.isEmpty;
 }

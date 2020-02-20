@@ -34,6 +34,8 @@ abstract class SleepRecordRepository {
   Future<List<SleepRecord>> findByMonthIndex(int monthIndex);
 
   Future<void> update(SleepRecord sleepRecord);
+
+  Future<void> remove(SleepRecord sleepRecord);
 }
 
 class _LocalSleepRepository implements SleepRecordRepository {
@@ -78,5 +80,12 @@ class _LocalSleepRepository implements SleepRecordRepository {
           where: "month_index = ? AND day = ?",
           whereArgs: [sleepRecord.monthIndex, sleepRecord.day]);
     }
+  }
+
+  @override
+  Future<void> remove(SleepRecord sleepRecord) async {
+    final db = await database;
+
+    return db.delete("sleep_records", where: "month_index = ? AND day = ?", whereArgs: [sleepRecord.monthIndex, sleepRecord.day]);
   }
 }

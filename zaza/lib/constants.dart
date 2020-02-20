@@ -13,4 +13,6 @@ class Strings {
   static const condition = "컨디션";
   static const pleaseEnterOnlyNumber = "숫자만 입력해 주세요!";
   static const pleaseEnterCorrectScore = "0~100 사이의 숫자를 입력해 주세요!";
+  static const hourSuffix = "시간";
+  static const scoreSuffix = "점";
 }

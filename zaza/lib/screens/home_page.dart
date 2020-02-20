@@ -264,9 +264,7 @@ class _CalendarState extends State<_Calendar>
                                       context, sleepRecord, day);
                                 }
                           : null,
-                      child: day > 0 && day < endDay
-                          ? Text("$day")
-                          : null,
+                      child: day > 0 && day < endDay ? Text("$day") : null,
                     ),
                   )));
         }),
@@ -282,10 +280,11 @@ class _CalendarState extends State<_Calendar>
               sleepRecord,
               _monthIndex,
               day,
-              onEditCompleted: (sleepRecord) async {
-                await _updateSleepRecord(sleepRecord);
+              onEditCompleted: (sleepRecord) {
+                _onSleepRecordEdited(sleepRecord);
                 Navigator.of(context).pop();
               },
+              onRemoved: _onSleepRecordRemoved,
             ));
   }
 
@@ -304,8 +303,7 @@ class _CalendarState extends State<_Calendar>
   }
 
   Color _getDayTextColor(int day, int weekDay, bool isToday) {
-    if (isToday)
-      return Colors.white;
+    if (isToday) return Colors.white;
 
     switch (weekDay) {
       case 7:
@@ -322,14 +320,18 @@ class _CalendarState extends State<_Calendar>
       _today.month == date.month &&
       _today.day == date.day;
 
-  Future<void> _updateSleepRecord(SleepRecord sleepRecord) {
-    return SleepRecordRepository().update(sleepRecord).then((_) {
-      setState(() {
-        _sleepRecords.removeWhere((record) =>
-            record.monthIndex == sleepRecord.monthIndex &&
-            record.day == sleepRecord.day);
-        _sleepRecords.add(sleepRecord);
-      });
+  void _onSleepRecordEdited(SleepRecord sleepRecord) {
+    setState(() {
+      _sleepRecords.removeWhere((record) =>
+          record.monthIndex == sleepRecord.monthIndex &&
+          record.day == sleepRecord.day);
+      _sleepRecords.add(sleepRecord);
+    });
+  }
+
+  void _onSleepRecordRemoved(SleepRecord sleepRecord) {
+    setState(() {
+      _sleepRecords.remove(sleepRecord);
     });
   }
 
