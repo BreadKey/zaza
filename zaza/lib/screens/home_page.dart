@@ -18,13 +18,13 @@ Color getDayColor(num conditionScore) {
   return conditionScore == null
       ? Colors.transparent
       : conditionScore > 90
-      ? Colors.greenAccent
-      : conditionScore > 70
       ? Colors.green
+      : conditionScore > 70
+      ? Colors.lime
       : conditionScore > 50
       ? Colors.yellow
       : conditionScore > 25
-      ? Colors.orange
+      ? Colors.orangeAccent
       : Colors.redAccent;
 }
 
