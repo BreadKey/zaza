@@ -7,13 +7,23 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Color(0xFFD9B484);
+    final primaryColorLight = Color(0xFFF5F5DC);
+    final primaryColorDark = Color(0xFF312123);
+    final accentColor = Color(0xFFFF9191);
+
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-          primaryColor: Color(0xFFD9B484),
-          primaryColorLight: Color(0xFFF5F5DC),
-          primaryColorDark: Color(0xFF312123),
-          accentColor: Color(0xFFFF9191)),
+          primaryColor: primaryColor,
+          primaryColorLight: primaryColorLight,
+          primaryColorDark: primaryColorDark,
+          accentColor: accentColor,
+          textTheme: TextTheme(
+              subtitle: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: primaryColorLight,
+                  fontSize: 18))),
       home: HomePage(),
     );
   }

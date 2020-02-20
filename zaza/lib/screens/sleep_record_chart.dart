@@ -103,7 +103,7 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
   @override
   Widget build(BuildContext context) {
     final themeData = Theme.of(context);
-    final moveable =_sleepRecords.length > 1;
+    final moveable = _sleepRecords.length > 1;
 
     return Stack(
       children: <Widget>[
@@ -141,6 +141,10 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
                         _firstScoreIndex--;
                       });
                     },
+            ),
+            Text(
+              Strings.sleepRecordChartTitle,
+              style: themeData.textTheme.subtitle,
             ),
             IconButton(
               color: themeData.accentColor,
@@ -188,11 +192,10 @@ class _SleepRecordPieChart extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (angles.isEmpty) return;
 
-    final center = Offset(size.width / 2, size.height / 2);
+    final center = Offset(size.width / 2, size.height / 2 * 1.05);
     final radius = (min(center.dx, center.dy) * 0.8);
     final holeRadius = radius * 0.6;
     final textRadius = (radius + holeRadius) / 2;
-    final textCenter = Offset(0.0, textRadius);
     final fontSize = radius * 0.11;
     final strokeWidth = radius * 0.02;
 
@@ -280,7 +283,8 @@ class _SleepRecordPieChart extends CustomPainter {
                   ..color = Colors.black
                   ..style = PaintingStyle.stroke,
               )),
-          textDirection: TextDirection.ltr)
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.center)
         ..layout();
 
       textStrokePainter.paint(canvas,
@@ -292,16 +296,9 @@ class _SleepRecordPieChart extends CustomPainter {
               style: TextStyle(
                   fontSize: fontSize,
                   fontWeight: FontWeight.bold,
-                  foreground: Paint()
-                    ..shader = RadialGradient(colors: [
-                      Colors.grey,
-                      Colors.white
-                    ], stops: [
-                      0.0,
-                      0.8
-                    ]).createShader(
-                        Rect.fromCircle(center: textCenter, radius: radius)))),
-          textDirection: TextDirection.ltr)
+                  foreground: Paint()..color = Colors.white)),
+          textDirection: TextDirection.ltr,
+          textAlign: TextAlign.center)
         ..layout();
 
       textFillPainter.paint(canvas,

@@ -15,4 +15,5 @@ class Strings {
   static const pleaseEnterCorrectScore = "0~100 사이의 숫자를 입력해 주세요!";
   static const hourSuffix = "시간";
   static const scoreSuffix = "점";
+  static const sleepRecordChartTitle = "시간별 점수 그래프";
 }

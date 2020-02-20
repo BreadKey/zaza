@@ -177,10 +177,7 @@ class _CalendarHeaderState extends State<_CalendarHeader> {
             }),
         Text(
           "${_currentDate?.year}.${_currentDate?.month}",
-          style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).primaryColorLight,
-              fontSize: 18),
+          style: Theme.of(context).textTheme.subtitle,
         ),
         IconButton(
             icon: Icon(Icons.chevron_right),
