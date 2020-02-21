@@ -32,7 +32,7 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
     _rotateAnimController =
         AnimationController(duration: Duration(milliseconds: 300), vsync: this);
     _rotateAnimation =
-        CurvedAnimation(parent: _rotateAnimController, curve: Curves.bounceOut);
+        CurvedAnimation(parent: _rotateAnimController, curve: Curves.easeInOutBack);
 
     _sleepRecordBloc.getAll().then((sleepRecords) {
       setState(() {
