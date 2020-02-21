@@ -212,11 +212,27 @@ class _SleepRecordPieChart extends CustomPainter {
     endAngle = -pi / 2 - sumOfBeforeAngles;
 
     if (isRight) {
-      endAngle -= (angles[firstScoreIndex] / 2) * _animationValue;
+      double leftHalfAngle;
+      if (firstScoreIndex > 0) {
+        leftHalfAngle = angles[firstScoreIndex - 1] / 2;
+      } else {
+        leftHalfAngle = angles.last / 2;
+      }
+
+      endAngle += leftHalfAngle;
+      endAngle -= (leftHalfAngle + angles[firstScoreIndex] / 2) * _animationValue;
     } else {
+      double rightHalfAngle;
+      if (firstScoreIndex == angles.length - 1) {
+        rightHalfAngle = angles.first / 2;
+      } else {
+        rightHalfAngle = angles[firstScoreIndex + 1] / 2;
+      }
+
       final firstAngle = angles[firstScoreIndex];
       endAngle -= firstAngle;
-      endAngle += firstAngle / 2 * _animationValue;
+      endAngle -= rightHalfAngle;
+      endAngle += (rightHalfAngle + firstAngle / 2) * _animationValue;
     }
 
     bool textAtSmallPositionToggle = false;
