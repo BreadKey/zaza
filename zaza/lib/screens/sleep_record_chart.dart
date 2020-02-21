@@ -31,8 +31,8 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
     super.initState();
     _rotateAnimController =
         AnimationController(duration: Duration(milliseconds: 300), vsync: this);
-    _rotateAnimation =
-        CurvedAnimation(parent: _rotateAnimController, curve: Curves.easeInOutBack);
+    _rotateAnimation = CurvedAnimation(
+        parent: _rotateAnimController, curve: Curves.easeInOutBack);
 
     _sleepRecordBloc.getAll().then((sleepRecords) {
       setState(() {
@@ -105,25 +105,8 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
     final themeData = Theme.of(context);
     final moveable = _sleepRecords.length > 1;
 
-    return Stack(
+    return Column(
       children: <Widget>[
-        SizedBox.expand(
-          child: AnimatedBuilder(
-            animation: _rotateAnimation,
-            builder: (context, child) {
-              return CustomPaint(
-                painter: _SleepRecordPieChart(
-                    _conditionScoresByHours,
-                    _angles,
-                    _firstScoreIndex,
-                    _rotateAnimController.isAnimating
-                        ? _rotateAnimation.value
-                        : 1.0,
-                    _isRight),
-              );
-            },
-          ),
-        ),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
@@ -162,6 +145,25 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
                     },
             )
           ],
+        ),
+        Expanded(
+          child: SizedBox.expand(
+            child: AnimatedBuilder(
+              animation: _rotateAnimation,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: _SleepRecordPieChart(
+                      _conditionScoresByHours,
+                      _angles,
+                      _firstScoreIndex,
+                      _rotateAnimController.isAnimating
+                          ? _rotateAnimation.value
+                          : 1.0,
+                      _isRight),
+                );
+              },
+            ),
+          ),
         )
       ],
     );
@@ -192,8 +194,8 @@ class _SleepRecordPieChart extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (angles.isEmpty) return;
 
-    final center = Offset(size.width / 2, size.height / 2 * 1.05);
-    final radius = (min(center.dx, center.dy) * 0.8);
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (min(center.dx, center.dy) * 0.88);
     final holeRadius = radius * 0.6;
     final textRadius = (radius + holeRadius) / 2;
     final fontSize = radius * 0.11;
@@ -220,7 +222,8 @@ class _SleepRecordPieChart extends CustomPainter {
       }
 
       endAngle += leftHalfAngle;
-      endAngle -= (leftHalfAngle + angles[firstScoreIndex] / 2) * _animationValue;
+      endAngle -=
+          (leftHalfAngle + angles[firstScoreIndex] / 2) * _animationValue;
     } else {
       double rightHalfAngle;
       if (firstScoreIndex == angles.length - 1) {
@@ -254,7 +257,6 @@ class _SleepRecordPieChart extends CustomPainter {
       final offset = Offset(cos(medianAngle), sin(medianAngle));
 
       final piePath = Path()
-        ..moveTo(center.dx + offset.dx, center.dy + offset.dy)
         ..arcTo(Rect.fromCircle(center: center + offset, radius: radius),
             beginAngle, angle, true)
         ..arcTo(Rect.fromCircle(center: center + offset, radius: holeRadius),
