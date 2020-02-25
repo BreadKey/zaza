@@ -257,7 +257,7 @@ class _CalendarState extends State<_Calendar>
     final dateFromIndex =
         YearMonthIndexConverter.fromYearMonthIndex(_monthIndex);
 
-    final weekDay = dateFromIndex.weekday - 2;
+    final startDay = dateFromIndex.weekday - 2;
     final endDay = DateTime(dateFromIndex.year, dateFromIndex.month + 1, 0).day;
 
     return SmartRefresher(
@@ -271,7 +271,7 @@ class _CalendarState extends State<_Calendar>
         crossAxisCount: 7,
         childAspectRatio: 0.9,
         children: List.generate(42, (index) {
-          final day = index - weekDay;
+          final day = index - startDay;
           final currentDay =
               DateTime(dateFromIndex.year, dateFromIndex.month, day);
           final isToday = _isToday(currentDay);
@@ -283,6 +283,8 @@ class _CalendarState extends State<_Calendar>
 
           final hourText =
               sleepRecord == null ? "" : "${sleepRecord.sleepHours}h";
+
+          final isValidDay = day > 0 && day <= endDay;
 
           return Container(
               margin: EdgeInsets.all(1),
@@ -301,7 +303,7 @@ class _CalendarState extends State<_Calendar>
                               shape: CircleBorder(),
                               textColor: textColor,
                               disabledTextColor: textColor.withOpacity(0.5),
-                              onPressed: day > 0 && day < endDay
+                              onPressed: isValidDay
                                   ? _today.isBefore(currentDay)
                                       ? null
                                       : () {
@@ -310,7 +312,7 @@ class _CalendarState extends State<_Calendar>
                                         }
                                   : null,
                               child:
-                                  day > 0 && day < endDay ? Text("$day") : null,
+                                  isValidDay ? Text("$day") : null,
                             ),
                           ),
                           Positioned.fill(
