@@ -127,7 +127,7 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
             ),
             Text(
               Strings.sleepRecordChartTitle,
-              style: themeData.textTheme.subtitle,
+              style: themeData.textTheme.subtitle2,
             ),
             IconButton(
               color: themeData.accentColor,
@@ -201,7 +201,6 @@ class _SleepRecordPieChart extends CustomPainter {
     final fontSize = radius * 0.11;
     final strokeWidth = radius * 0.02;
 
-//    print(firstScoreIndex);
     double beginAngle = 0.0;
 
     final sumOfBeforeAngles = firstScoreIndex == 0

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zaza/constants.dart';
 import 'package:zaza/screens/home_page.dart';
 
 void main() => runApp(MyApp());
@@ -7,10 +8,10 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    final primaryColor = Color(0xFFD9B484);
-    final primaryColorLight = Color(0xFFF5F5DC);
-    final primaryColorDark = Color(0xFF312123);
-    final accentColor = Color(0xFFFF9191);
+    final primaryColor = ZazaColors.brownBread;
+    final primaryColorLight = ZazaColors.whiteChocolate;
+    final primaryColorDark = ZazaColors.chocolate;
+    final accentColor = ZazaColors.strawberryPink;
 
     return MaterialApp(
       title: 'Flutter Demo',
@@ -20,7 +21,7 @@ class MyApp extends StatelessWidget {
           primaryColorDark: primaryColorDark,
           accentColor: accentColor,
           textTheme: TextTheme(
-              subtitle: TextStyle(
+              subtitle2: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: primaryColorLight,
                   fontSize: 18))),

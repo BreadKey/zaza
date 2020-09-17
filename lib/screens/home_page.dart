@@ -18,13 +18,13 @@ Color getDayColor(num conditionScore) {
   return conditionScore == null
       ? Colors.transparent
       : conditionScore > 90
-          ? Colors.green
+          ? ZazaColors.greenary
           : conditionScore > 70
-              ? Colors.lime
+              ? ZazaColors.lime
               : conditionScore > 50
-                  ? Colors.yellow
+                  ? ZazaColors.samoanSun
                   : conditionScore > 25
-                      ? Colors.orangeAccent
+                      ? ZazaColors.sunOrange
                       : Colors.redAccent;
 }
 
@@ -60,9 +60,11 @@ class _HomePageState extends State<HomePage> {
     final themeData = Theme.of(context);
 
     return Scaffold(
+        resizeToAvoidBottomInset: false,
         appBar: AppBar(
+          title: Text(Strings.zaza),
           bottom: PreferredSize(
-            preferredSize: Size.fromHeight(50),
+            preferredSize: Size.fromHeight(kToolbarHeight),
             child: _CalendarHeader(
               controller: _pageController,
             ),
@@ -91,8 +93,7 @@ class _HomePageState extends State<HomePage> {
                 slivers: <Widget>[
                   SliverAppBar(
                     backgroundColor: themeData.scaffoldBackgroundColor,
-                    expandedHeight:
-                        MediaQuery.of(context).size.width * 6 / 7 / 0.9,
+                    expandedHeight: MediaQuery.of(context).size.height / 1.618,
                     flexibleSpace: FlexibleSpaceBar(
                       background: PageView.builder(
                         itemBuilder: (context, index) => _Calendar(
@@ -130,34 +131,33 @@ class _CalendarHeader extends StatefulWidget {
         super(key: key);
 
   @override
-  State<StatefulWidget> createState() => _CalendarHeaderState(_controller);
+  State<StatefulWidget> createState() => _CalendarHeaderState();
 }
 
 class _CalendarHeaderState extends State<_CalendarHeader> {
-  final PageController _controller;
   DateTime _currentDate;
 
-  _CalendarHeaderState(this._controller);
+  _CalendarHeaderState();
 
   Function() _controllerListener;
 
   @override
   void initState() {
     super.initState();
-    _currentDate =
-        YearMonthIndexConverter.fromYearMonthIndex(_controller.initialPage);
+    _currentDate = YearMonthIndexConverter.fromYearMonthIndex(
+        widget._controller.initialPage);
     _controllerListener = () {
       setState(() {
         _currentDate = YearMonthIndexConverter.fromYearMonthIndex(
-            _controller.page.round());
+            widget._controller.page.round());
       });
     };
-    _controller.addListener(_controllerListener);
+    widget._controller.addListener(_controllerListener);
   }
 
   @override
   void dispose() {
-    _controller.removeListener(_controllerListener);
+    widget._controller.removeListener(_controllerListener);
     super.dispose();
   }
 
@@ -169,20 +169,26 @@ class _CalendarHeaderState extends State<_CalendarHeader> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: <Widget>[
         IconButton(
-            icon: Icon(Icons.chevron_left),
+            icon: const Icon(
+              Icons.chevron_left,
+              color: ZazaColors.bread,
+            ),
             onPressed: () {
-              _controller.animateToPage(--currentIndex,
+              widget._controller.animateToPage(--currentIndex,
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.ease);
             }),
         Text(
           "${_currentDate?.year}.${_currentDate?.month}",
-          style: Theme.of(context).textTheme.subtitle,
+          style: Theme.of(context).textTheme.subtitle2,
         ),
         IconButton(
-            icon: Icon(Icons.chevron_right),
+            icon: const Icon(
+              Icons.chevron_right,
+              color: ZazaColors.bread,
+            ),
             onPressed: () {
-              _controller.animateToPage(++currentIndex,
+              widget._controller.animateToPage(++currentIndex,
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.ease);
             }),
@@ -311,8 +317,7 @@ class _CalendarState extends State<_Calendar>
                                               context, sleepRecord, day);
                                         }
                                   : null,
-                              child:
-                                  isValidDay ? Text("$day") : null,
+                              child: isValidDay ? Text("$day") : null,
                             ),
                           ),
                           Positioned.fill(

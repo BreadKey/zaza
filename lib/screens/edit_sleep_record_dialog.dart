@@ -1,28 +1,21 @@
 part of 'home_page.dart';
 
 class _EditSleepRecordDialog extends StatefulWidget {
-  final SleepRecordBloc _sleepRecordBloc;
+  final SleepRecordBloc sleepRecordBloc;
   final SleepRecord sleepRecord;
   final int monthIndex;
   final int day;
 
-  const _EditSleepRecordDialog(this._sleepRecordBloc, this.sleepRecord, this.monthIndex, this.day);
-
+  const _EditSleepRecordDialog(
+      this.sleepRecordBloc, this.sleepRecord, this.monthIndex, this.day);
 
   @override
-  State<StatefulWidget> createState() =>
-      _EditSleepRecordState(_sleepRecordBloc, sleepRecord, monthIndex, day);
+  State<StatefulWidget> createState() => _EditSleepRecordState();
 }
 
 class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
   static final _nanRegExp = RegExp(r"['.'',' ]");
-  final SleepRecordBloc _sleepRecordBloc;
-
   final _formKey = GlobalKey<FormState>();
-
-  SleepRecord sleepRecord;
-  final int monthIndex;
-  final int day;
 
   bool _validated = false;
 
@@ -31,17 +24,19 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
   TextEditingController _sleepHoursTextController;
   TextEditingController _conditionScoreTextController;
 
-  _EditSleepRecordState(
-      this._sleepRecordBloc, this.sleepRecord, this.monthIndex, this.day);
+  _EditSleepRecordState();
+
+  SleepRecord _sleepRecord;
 
   @override
   void initState() {
     super.initState();
     _conditionFocusNode = FocusNode();
+    _sleepRecord = widget.sleepRecord;
     _sleepHoursTextController =
-        TextEditingController(text: sleepRecord?.sleepHours?.toString());
-    _conditionScoreTextController =
-        TextEditingController(text: sleepRecord?.conditionScore?.toString());
+        TextEditingController(text: _sleepRecord?.sleepHours?.toString());
+    _conditionScoreTextController = TextEditingController(
+        text: widget.sleepRecord?.conditionScore?.toString());
   }
 
   @override
@@ -66,7 +61,9 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
               controller: _sleepHoursTextController,
               autofocus: true,
               decoration: InputDecoration(
-                  icon: Icon(Icons.watch_later), labelText: Strings.sleepTime, suffixText: Strings.hourSuffix),
+                  icon: Icon(Icons.watch_later),
+                  labelText: Strings.sleepTime,
+                  suffixText: Strings.hourSuffix),
               keyboardType: TextInputType.number,
               validator: (value) {
                 if (_isNaN(value)) return Strings.pleaseEnterOnlyNumber;
@@ -81,7 +78,10 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
               controller: _conditionScoreTextController,
               focusNode: _conditionFocusNode,
               decoration: InputDecoration(
-                  icon: Icon(Icons.mood), labelText: Strings.condition, hintText: "0~100", suffixText: Strings.scoreSuffix),
+                  icon: Icon(Icons.mood),
+                  labelText: Strings.condition,
+                  hintText: "0~100",
+                  suffixText: Strings.scoreSuffix),
               keyboardType: TextInputType.number,
               validator: (value) {
                 if (_isNaN(value))
@@ -108,17 +108,16 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
       actions: <Widget>[
         IconButton(
           icon: Icon(Icons.delete_forever),
-          onPressed: sleepRecord == null ? null : () {
-            final sleepRecord = this.sleepRecord;
+          onPressed: widget.sleepRecord == null
+              ? null
+              : () {
+                  setState(() {
+                    _sleepRecord = null;
+                  });
 
-            setState(() {
-              this.sleepRecord = null;
-            });
-
-            _sleepRecordBloc.remove(sleepRecord);
-          },
+                  widget.sleepRecordBloc.remove(widget.sleepRecord);
+                },
         ),
-
         IconButton(
           icon: Icon(Icons.edit),
           onPressed: _validated
@@ -128,12 +127,13 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
                   });
 
                   if (_formKey.currentState.validate()) {
-                    final sleepRecord = SleepRecord(monthIndex, day,
+                    final sleepRecord = SleepRecord(
+                        widget.monthIndex, widget.day,
                         sleepHours: int.parse(_sleepHoursTextController.text),
                         conditionScore:
                             int.parse(_conditionScoreTextController.text));
 
-                    _sleepRecordBloc.update(sleepRecord).then((_) {
+                    widget.sleepRecordBloc.update(sleepRecord).then((_) {
                       Navigator.of(context).pop();
                     });
                   }

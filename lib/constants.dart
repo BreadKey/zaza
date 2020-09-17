@@ -1,6 +1,9 @@
+import 'package:flutter/material.dart';
+
 class Strings {
   Strings._();
 
+  static const zaza = "Zaza";
   static const monday = "월";
   static const tuesday = "화";
   static const wednesday = "수";
@@ -16,4 +19,19 @@ class Strings {
   static const hourSuffix = "시간";
   static const scoreSuffix = "점";
   static const sleepRecordChartTitle = "시간별 점수 그래프";
+}
+
+/// Colors are from pantone
+class ZazaColors {
+  ZazaColors._();
+
+  static const bread = Color(0xFFFAD692);
+  static const brownBread = Color(0xFFC68958);
+  static const chocolate = Color(0xFF503130);
+  static const whiteChocolate = Color(0xFFEDE6D6);
+  static const strawberryPink = Color(0xFFF88192);
+  static const samoanSun = Color(0xFFFBC85F);
+  static const sunOrange = Color(0xFFF48048);
+  static const lime = Color(0xFFA9C23F);
+  static const greenary = Color(0xFF00A651);
 }
