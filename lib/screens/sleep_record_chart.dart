@@ -252,6 +252,7 @@ class _SleepRecordPieChart extends CustomPainter {
     final scores = <double>[];
 
     int index = 0;
+
     for (final angle in angles) {
       beginAngle = endAngle;
       endAngle = beginAngle + angle;
@@ -264,19 +265,29 @@ class _SleepRecordPieChart extends CustomPainter {
 
       final offset = Offset(cos(medianAngle), sin(medianAngle));
 
-      final piePath = Path()
-        ..arcTo(Rect.fromCircle(center: center + offset, radius: radius),
-            beginAngle, angle, true)
-        ..arcTo(Rect.fromCircle(center: center + offset, radius: holeRadius),
-            endAngle, -angle, false)
-        ..close();
+      if (angles.length == 1) {
+        canvas.drawCircle(
+            center + offset,
+            (radius + holeRadius) / 2,
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..color = getScoreColor(score)
+              ..strokeWidth = radius - holeRadius);
+      } else {
+        final piePath = Path()
+          ..arcTo(Rect.fromCircle(center: center + offset, radius: radius),
+              beginAngle, angle, true)
+          ..arcTo(Rect.fromCircle(center: center + offset, radius: holeRadius),
+              endAngle, -angle, false)
+          ..close();
 
-      canvas.drawPath(piePath, Paint()..color = getScoreColor(score));
+        canvas.drawPath(piePath, Paint()..color = getScoreColor(score));
+      }
 
       index++;
     }
-
     index = 0;
+
     for (final angle in angles) {
       textAtSmallPositionToggle = !textAtSmallPositionToggle;
 
