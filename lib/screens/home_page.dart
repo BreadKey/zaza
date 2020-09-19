@@ -1,32 +1,15 @@
-import 'dart:async';
-import 'dart:math';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:provider/provider.dart';
 import 'package:zaza/blocs/sleep_record_bloc.dart';
-import 'package:zaza/extensions.dart';
 import 'package:zaza/constants.dart';
-import 'package:zaza/models/sleep_record.dart';
+import 'package:zaza/extensions.dart';
+import 'package:zaza/models/week_day.dart';
 
-part 'edit_sleep_record_dialog.dart';
-
-part 'sleep_record_chart.dart';
-
-Color getDayColor(num conditionScore) {
-  return conditionScore == null
-      ? Colors.transparent
-      : conditionScore > 90
-          ? ZazaColors.greenary
-          : conditionScore > 70
-              ? ZazaColors.lime
-              : conditionScore > 50
-                  ? ZazaColors.samoanSun
-                  : conditionScore > 25
-                      ? ZazaColors.sunOrange
-                      : Colors.redAccent;
-}
+import 'calendar.dart';
+import 'sleep_record_chart.dart';
+import 'utils.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -60,338 +43,73 @@ class _HomePageState extends State<HomePage> {
     final themeData = Theme.of(context);
 
     return Scaffold(
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: Text(Strings.zaza),
-          bottom: PreferredSize(
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        title: Text(Strings.zaza),
+        bottom: PreferredSize(
             preferredSize: Size.fromHeight(kToolbarHeight),
-            child: _CalendarHeader(
-              controller: _pageController,
-            ),
-          ),
-        ),
-        body: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 8),
-              color: themeData.primaryColorLight,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: <Widget>[
-                  Text(Strings.monday),
-                  Text(Strings.tuesday),
-                  Text(Strings.wednesday),
-                  Text(Strings.thursday),
-                  Text(Strings.friday),
-                  Text(Strings.saturday, style: themeData.saturdayTextStyle),
-                  Text(Strings.sunday, style: themeData.sundayTextStyle),
-                ],
-              ),
-            ),
-            Expanded(
-              child: CustomScrollView(
-                slivers: <Widget>[
-                  SliverAppBar(
-                    backgroundColor: themeData.scaffoldBackgroundColor,
-                    expandedHeight: MediaQuery.of(context).size.height / 1.618,
-                    flexibleSpace: FlexibleSpaceBar(
-                      background: PageView.builder(
-                        itemBuilder: (context, index) => _Calendar(
-                          _sleepRecordBloc,
-                          index,
-                          key: Key("calendar$index"),
-                        ),
-                        controller: _pageController,
-                      ),
-                    ),
+            child: Column(
+              children: [
+                MonthMover(
+                  controller: _pageController,
+                ),
+                Container(
+                  color: themeData.primaryColorLight,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: WeekDay.values
+                        .map((weekDay) => Text(
+                              Strings.buildWeekDay(weekDay),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .subtitle2
+                                  .copyWith(color: getWeekDayColor(weekDay)),
+                            ))
+                        .toList(),
                   ),
-                  SliverGrid.count(
-                    crossAxisCount: 1,
-                    children: <Widget>[
-                      Container(
-                        color: themeData.primaryColorDark,
-                        child: _SleepRecordChart(_sleepRecordBloc),
-                      )
-                    ],
-                  )
-                ],
+                )
+              ],
+            )),
+      ),
+      body: Provider.value(
+        value: _sleepRecordBloc,
+        child: CustomScrollView(
+          slivers: <Widget>[
+            SliverAppBar(
+              backgroundColor: Colors.transparent,
+              expandedHeight: MediaQuery.of(context).size.height / 1.618,
+              flexibleSpace: FlexibleSpaceBar(
+                background: PageView.builder(
+                  itemBuilder: (context, index) => Calendar(
+                    index,
+                    key: Key("calendar$index"),
+                  ),
+                  controller: _pageController,
+                ),
               ),
             ),
+            SliverGrid.count(
+              crossAxisCount: 1,
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                    color: themeData.primaryColorDark,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey,
+                        offset: Offset(0.0, 1.0), //(x,y)
+                        blurRadius: 8.0,
+                      ),
+                    ],
+                  ),
+                  child: SleepRecordChart(),
+                )
+              ],
+            )
           ],
-        ));
-  }
-}
-
-class _CalendarHeader extends StatefulWidget {
-  final PageController _controller;
-
-  const _CalendarHeader({Key key, @required PageController controller})
-      : assert(controller != null),
-        _controller = controller,
-        super(key: key);
-
-  @override
-  State<StatefulWidget> createState() => _CalendarHeaderState();
-}
-
-class _CalendarHeaderState extends State<_CalendarHeader> {
-  DateTime _currentDate;
-
-  _CalendarHeaderState();
-
-  Function() _controllerListener;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentDate = YearMonthIndexConverter.fromYearMonthIndex(
-        widget._controller.initialPage);
-    _controllerListener = () {
-      setState(() {
-        _currentDate = YearMonthIndexConverter.fromYearMonthIndex(
-            widget._controller.page.round());
-      });
-    };
-    widget._controller.addListener(_controllerListener);
-  }
-
-  @override
-  void dispose() {
-    widget._controller.removeListener(_controllerListener);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    int currentIndex = _currentDate.toYearMonthIndex;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: <Widget>[
-        IconButton(
-            icon: const Icon(
-              Icons.chevron_left,
-              color: ZazaColors.bread,
-            ),
-            onPressed: () {
-              widget._controller.animateToPage(--currentIndex,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.ease);
-            }),
-        Text(
-          "${_currentDate?.year}.${_currentDate?.month}",
-          style: Theme.of(context).textTheme.subtitle2,
         ),
-        IconButton(
-            icon: const Icon(
-              Icons.chevron_right,
-              color: ZazaColors.bread,
-            ),
-            onPressed: () {
-              widget._controller.animateToPage(++currentIndex,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.ease);
-            }),
-      ],
-    );
-  }
-}
-
-class _Calendar extends StatefulWidget {
-  final SleepRecordBloc _sleepRecordBloc;
-  final int monthIndex;
-
-  const _Calendar(this._sleepRecordBloc, this.monthIndex, {key: Key})
-      : super(key: key);
-
-  @override
-  State<StatefulWidget> createState() =>
-      _CalendarState(_sleepRecordBloc, monthIndex);
-}
-
-class _CalendarState extends State<_Calendar>
-    with AutomaticKeepAliveClientMixin {
-  final SleepRecordBloc _sleepRecordBloc;
-  final int _monthIndex;
-  List<SleepRecord> _sleepRecords = [];
-  DateTime _today = DateTime.now();
-  ThemeData _themeData;
-  RefreshController _refreshController;
-
-  _CalendarState(this._sleepRecordBloc, this._monthIndex);
-
-  StreamSubscription _editedSleepRecordListener;
-  StreamSubscription _removedSleepRecordListener;
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshController = RefreshController(initialRefresh: true);
-    _editedSleepRecordListener =
-        _sleepRecordBloc.editedSleepRecord.listen((editedSleepRecord) {
-      _onSleepRecordEdited(editedSleepRecord);
-    });
-
-    _removedSleepRecordListener =
-        _sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
-      _onSleepRecordRemoved(removedSleepRecord);
-    });
-  }
-
-  @override
-  void dispose() {
-    _editedSleepRecordListener.cancel();
-    _removedSleepRecordListener.cancel();
-    _refreshController.dispose();
-    super.dispose();
-  }
-
-  void refresh() {
-    _sleepRecordBloc.findByMonthIndex(_monthIndex).then((sleepRecords) {
-      setState(() {
-        _sleepRecords = sleepRecords;
-        _today = DateTime.now();
-        _refreshController.refreshCompleted();
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    _themeData = Theme.of(context);
-
-    final dateFromIndex =
-        YearMonthIndexConverter.fromYearMonthIndex(_monthIndex);
-
-    final startDay = dateFromIndex.weekday - 2;
-    final endDay = DateTime(dateFromIndex.year, dateFromIndex.month + 1, 0).day;
-
-    return SmartRefresher(
-      header: WaterDropMaterialHeader(
-        backgroundColor: _themeData.primaryColorLight,
-        color: _themeData.accentColor,
-      ),
-      controller: _refreshController,
-      onRefresh: refresh,
-      child: GridView.count(
-        crossAxisCount: 7,
-        childAspectRatio: 0.9,
-        children: List.generate(42, (index) {
-          final day = index - startDay;
-          final currentDay =
-              DateTime(dateFromIndex.year, dateFromIndex.month, day);
-          final isToday = _isToday(currentDay);
-
-          final sleepRecord = _sleepRecords
-              .firstWhere((record) => record.day == day, orElse: () => null);
-
-          final textColor = _getDayTextColor(day, index % 7 + 1, isToday);
-
-          final hourText =
-              sleepRecord == null ? "" : "${sleepRecord.sleepHours}h";
-
-          final isValidDay = day > 0 && day <= endDay;
-
-          return Container(
-              margin: EdgeInsets.all(1),
-              child: Material(
-                  shape: CircleBorder(),
-                  color: getDayColor(sleepRecord?.conditionScore),
-                  child: Container(
-                      margin: EdgeInsets.all(3),
-                      child: Stack(
-                        children: <Widget>[
-                          SizedBox.expand(
-                            child: FlatButton(
-                              color: isToday
-                                  ? _themeData.accentColor
-                                  : Colors.transparent,
-                              shape: CircleBorder(),
-                              textColor: textColor,
-                              disabledTextColor: textColor.withOpacity(0.5),
-                              onPressed: isValidDay
-                                  ? _today.isBefore(currentDay)
-                                      ? null
-                                      : () {
-                                          _showEditSleepRecordDialog(
-                                              context, sleepRecord, day);
-                                        }
-                                  : null,
-                              child: isValidDay ? Text("$day") : null,
-                            ),
-                          ),
-                          Positioned.fill(
-                              left: 2,
-                              top: 2,
-                              child: Stack(
-                                children: <Widget>[
-                                  Text(
-                                    hourText,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      foreground: Paint()
-                                        ..color = _themeData.primaryColorDark
-                                        ..strokeWidth = 2
-                                        ..style = PaintingStyle.stroke,
-                                    ),
-                                  ),
-                                  Text(
-                                    hourText,
-                                    style: TextStyle(
-                                        fontSize: 10, color: Colors.white),
-                                  )
-                                ],
-                              ))
-                        ],
-                      ))));
-        }),
       ),
     );
   }
-
-  void _showEditSleepRecordDialog(
-      BuildContext context, SleepRecord sleepRecord, int day) {
-    showDialog(
-        context: context,
-        builder: (context) => _EditSleepRecordDialog(
-            _sleepRecordBloc, sleepRecord, _monthIndex, day));
-  }
-
-  Color _getDayTextColor(int day, int weekDay, bool isToday) {
-    if (isToday) return Colors.white;
-
-    switch (weekDay) {
-      case 7:
-        return _themeData.accentColor;
-      case 6:
-        return _themeData.primaryColorDark;
-      default:
-        return _themeData.textTheme.body1.color;
-    }
-  }
-
-  bool _isToday(DateTime date) =>
-      _today.year == date.year &&
-      _today.month == date.month &&
-      _today.day == date.day;
-
-  void _onSleepRecordEdited(SleepRecord sleepRecord) {
-    if (sleepRecord.monthIndex != _monthIndex) return;
-
-    setState(() {
-      _sleepRecords.removeWhere((record) =>
-          record.monthIndex == sleepRecord.monthIndex &&
-          record.day == sleepRecord.day);
-      _sleepRecords.add(sleepRecord);
-    });
-  }
-
-  void _onSleepRecordRemoved(SleepRecord sleepRecord) {
-    setState(() {
-      _sleepRecords.remove(sleepRecord);
-    });
-  }
-
-  @override
-  bool get wantKeepAlive => true;
 }

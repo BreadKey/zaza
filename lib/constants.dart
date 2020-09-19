@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:zaza/models/week_day.dart';
 
 class Strings {
   Strings._();
 
   static const zaza = "Zaza";
-  static const monday = "월";
-  static const tuesday = "화";
-  static const wednesday = "수";
-  static const thursday = "목";
-  static const friday = "금";
-  static const saturday = "토";
-  static const sunday = "일";
   static const editSleepRecordTitle = "기록하기";
   static const sleepTime = "수면 시간";
   static const condition = "컨디션";
@@ -19,6 +13,28 @@ class Strings {
   static const hourSuffix = "시간";
   static const scoreSuffix = "점";
   static const sleepRecordChartTitle = "시간별 점수 그래프";
+
+  static String buildWeekDay(WeekDay weekDay) {
+    switch (weekDay) {
+      case WeekDay.monday:
+        return "월";
+      case WeekDay.tuesday:
+        return "화";
+      case WeekDay.wednesday:
+        return "수";
+      case WeekDay.thursday:
+        return "목";
+      case WeekDay.friday:
+        return "금";
+      case WeekDay.saturday:
+        return "토";
+      case WeekDay.sunday:
+        return "일";
+
+      default:
+        return null;
+    }
+  }
 }
 
 /// Colors are from pantone

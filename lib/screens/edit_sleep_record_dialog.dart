@@ -1,31 +1,29 @@
-part of 'home_page.dart';
+import 'package:flutter/material.dart';
+import 'package:zaza/blocs/sleep_record_bloc.dart';
+import 'package:zaza/constants.dart';
+import 'package:zaza/models/sleep_record.dart';
 
-class _EditSleepRecordDialog extends StatefulWidget {
+class EditSleepRecordDialog extends StatefulWidget {
   final SleepRecordBloc sleepRecordBloc;
   final SleepRecord sleepRecord;
   final int monthIndex;
   final int day;
 
-  const _EditSleepRecordDialog(
+  const EditSleepRecordDialog(
       this.sleepRecordBloc, this.sleepRecord, this.monthIndex, this.day);
 
   @override
   State<StatefulWidget> createState() => _EditSleepRecordState();
 }
 
-class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
+class _EditSleepRecordState extends State<EditSleepRecordDialog> {
   static final _nanRegExp = RegExp(r"['.'',' ]");
   final _formKey = GlobalKey<FormState>();
-
-  bool _validated = false;
 
   FocusNode _conditionFocusNode;
 
   TextEditingController _sleepHoursTextController;
   TextEditingController _conditionScoreTextController;
-
-  _EditSleepRecordState();
-
   SleepRecord _sleepRecord;
 
   @override
@@ -57,57 +55,38 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             TextFormField(
-              textAlign: TextAlign.right,
-              controller: _sleepHoursTextController,
-              autofocus: true,
-              decoration: InputDecoration(
-                  icon: Icon(Icons.watch_later),
-                  labelText: Strings.sleepTime,
-                  suffixText: Strings.hourSuffix),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (_isNaN(value)) return Strings.pleaseEnterOnlyNumber;
-                return null;
-              },
-              onFieldSubmitted: (value) {
-                FocusScope.of(context).requestFocus(_conditionFocusNode);
-              },
-            ),
+                textAlign: TextAlign.right,
+                controller: _sleepHoursTextController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                    icon: Icon(Icons.watch_later),
+                    labelText: Strings.sleepTime,
+                    suffixText: Strings.hourSuffix),
+                keyboardType: TextInputType.number,
+                validator: _validateSleepHour,
+                onFieldSubmitted: (value) {
+                  FocusScope.of(context).requestFocus(_conditionFocusNode);
+                }),
             TextFormField(
-              textAlign: TextAlign.right,
-              controller: _conditionScoreTextController,
-              focusNode: _conditionFocusNode,
-              decoration: InputDecoration(
-                  icon: Icon(Icons.mood),
-                  labelText: Strings.condition,
-                  hintText: "0~100",
-                  suffixText: Strings.scoreSuffix),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (_isNaN(value))
-                  return Strings.pleaseEnterOnlyNumber;
-                else {
-                  final score = int.parse(value);
-
-                  if (score > 100) {
-                    return Strings.pleaseEnterCorrectScore;
-                  }
-                }
-
-                return null;
-              },
-              onFieldSubmitted: (value) {
-                setState(() {
-                  _validated = _formKey.currentState.validate();
-                });
-              },
-            )
+                textAlign: TextAlign.right,
+                controller: _conditionScoreTextController,
+                focusNode: _conditionFocusNode,
+                decoration: const InputDecoration(
+                    icon: Icon(Icons.mood),
+                    labelText: Strings.condition,
+                    hintText: "0~100",
+                    suffixText: Strings.scoreSuffix),
+                keyboardType: TextInputType.number,
+                validator: _validateConditionScore)
           ],
         ),
       ),
       actions: <Widget>[
         IconButton(
-          icon: Icon(Icons.delete_forever),
+          icon: const Icon(
+            Icons.delete_forever,
+          ),
+          color: Colors.redAccent,
           onPressed: widget.sleepRecord == null
               ? null
               : () {
@@ -116,34 +95,46 @@ class _EditSleepRecordState extends State<_EditSleepRecordDialog> {
                   });
 
                   widget.sleepRecordBloc.remove(widget.sleepRecord);
+                  Navigator.of(context).pop();
                 },
         ),
         IconButton(
-          icon: Icon(Icons.edit),
-          onPressed: _validated
-              ? () {
-                  setState(() {
-                    _validated = false;
-                  });
+            icon: const Icon(Icons.edit),
+            onPressed: () {
+              if (_formKey.currentState.validate()) {
+                final sleepRecord = SleepRecord(widget.monthIndex, widget.day,
+                    sleepHours: int.parse(_sleepHoursTextController.text),
+                    conditionScore:
+                        int.parse(_conditionScoreTextController.text));
 
-                  if (_formKey.currentState.validate()) {
-                    final sleepRecord = SleepRecord(
-                        widget.monthIndex, widget.day,
-                        sleepHours: int.parse(_sleepHoursTextController.text),
-                        conditionScore:
-                            int.parse(_conditionScoreTextController.text));
-
-                    widget.sleepRecordBloc.update(sleepRecord).then((_) {
-                      Navigator.of(context).pop();
-                    });
-                  }
-                }
-              : null,
-        )
+                widget.sleepRecordBloc.update(sleepRecord).then((_) {
+                  Navigator.of(context).pop();
+                });
+              }
+            })
       ],
     );
   }
 
   bool _isNaN(String value) =>
       _nanRegExp.hasMatch(value) || value.contains("-") || value.isEmpty;
+
+  String _validateSleepHour(String sleepHour) {
+    if (_isNaN(sleepHour)) return Strings.pleaseEnterOnlyNumber;
+    return null;
+  }
+
+  String _validateConditionScore(String conditationScore) {
+    if (_isNaN(conditationScore))
+      return Strings.pleaseEnterOnlyNumber;
+    else {
+      final score = int.parse(conditationScore);
+
+      if (score > 100) {
+        return Strings.pleaseEnterCorrectScore;
+      }
+    }
+
+    return null;
+  }
 }

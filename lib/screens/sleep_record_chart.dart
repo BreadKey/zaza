@@ -1,28 +1,32 @@
-part of 'home_page.dart';
+import 'dart:math';
 
-class _SleepRecordChart extends StatefulWidget {
-  final SleepRecordBloc _sleepRecordBloc;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:rxdart/rxdart.dart';
+import 'package:zaza/blocs/sleep_record_bloc.dart';
+import 'package:zaza/constants.dart';
+import 'package:zaza/models/sleep_record.dart';
+import 'package:zaza/screens/utils.dart';
 
-  const _SleepRecordChart(this._sleepRecordBloc);
-
+class SleepRecordChart extends StatefulWidget {
   @override
-  State<StatefulWidget> createState() =>
-      _SleepRecordChartState(_sleepRecordBloc);
+  State<StatefulWidget> createState() => _SleepRecordChartState();
 }
 
-class _SleepRecordChartState extends State<_SleepRecordChart>
+class _SleepRecordChartState extends State<SleepRecordChart>
     with SingleTickerProviderStateMixin {
-  final SleepRecordBloc _sleepRecordBloc;
   List<SleepRecord> _sleepRecords = [];
   List<MapEntry<int, double>> _conditionScoresByHours = [];
   List<double> _angles = [];
 
-  _SleepRecordChartState(this._sleepRecordBloc);
+  _SleepRecordChartState();
 
   int _firstScoreIndex = 0;
 
   AnimationController _rotateAnimController;
   Animation<double> _rotateAnimation;
+
+  CompositeSubscription _disposables;
 
   bool _isRight = true;
 
@@ -33,15 +37,19 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
         AnimationController(duration: Duration(milliseconds: 300), vsync: this);
     _rotateAnimation = CurvedAnimation(
         parent: _rotateAnimController, curve: Curves.easeInOutBack);
+    _disposables = CompositeSubscription();
 
-    _sleepRecordBloc.getAll().then((sleepRecords) {
+    final sleepRecordBloc = context.read<SleepRecordBloc>();
+
+    sleepRecordBloc.getAll().then((sleepRecords) {
       setState(() {
         _sleepRecords = sleepRecords;
         _calculateConditionScoreByHours();
       });
     });
 
-    _sleepRecordBloc.editedSleepRecord.listen((editedSleepRecord) {
+    _disposables
+        .add(sleepRecordBloc.editedSleepRecord.listen((editedSleepRecord) {
       setState(() {
         _sleepRecords.removeWhere((sleepRecord) =>
             sleepRecord.monthIndex == editedSleepRecord.monthIndex &&
@@ -49,19 +57,21 @@ class _SleepRecordChartState extends State<_SleepRecordChart>
         _sleepRecords.add(editedSleepRecord);
         _calculateConditionScoreByHours();
       });
-    });
+    }));
 
-    _sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
+    _disposables
+        .add(sleepRecordBloc.removedSleepRecord.listen((removedSleepRecord) {
       setState(() {
         _sleepRecords.remove(removedSleepRecord);
         _calculateConditionScoreByHours();
       });
-    });
+    }));
   }
 
   @override
   void dispose() {
     _rotateAnimController.dispose();
+    _disposables.dispose();
     super.dispose();
   }
 
@@ -262,7 +272,7 @@ class _SleepRecordPieChart extends CustomPainter {
             endAngle, -angle, false)
         ..close();
 
-      canvas.drawPath(piePath, Paint()..color = getDayColor(score));
+      canvas.drawPath(piePath, Paint()..color = getScoreColor(score));
 
       index++;
     }
