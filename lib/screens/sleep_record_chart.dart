@@ -76,9 +76,8 @@ class _SleepRecordChartState extends State<SleepRecordChart>
   }
 
   void _calculateConditionScoreByHours() {
-    if (_sleepRecords.isEmpty) return;
-
     _conditionScoresByHours.clear();
+    if (_sleepRecords.isEmpty) return;
 
     final sleepRecordMapByHours = Map<int, List<SleepRecord>>();
 
